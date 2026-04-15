@@ -3,15 +3,16 @@ import { getSession } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import ChatBox from './ChatBox';
 
-export default async function ConversationPage({ params }: { params: { username: string } }) {
+export default async function ConversationPage({ params }: { params: Promise<{ username: string }> }) {
   const session = await getSession();
   if (!session) {
     redirect('/login');
   }
 
   const db = getDb();
+  const { username } = await params;
   
-  const otherUser = db.prepare('SELECT id, username FROM users WHERE username = ?').get(params.username) as any;
+  const otherUser = db.prepare('SELECT id, username FROM users WHERE username = ?').get(username) as any;
   if (!otherUser) {
     redirect('/messages');
   }

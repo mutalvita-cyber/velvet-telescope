@@ -5,11 +5,12 @@ import Link from 'next/link';
 import FeedItem from '@/components/FeedItem';
 import FollowButton from '@/components/FollowButton';
 
-export default async function ProfilePage({ params }: { params: { username: string } }) {
+export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const session = await getSession();
   const db = getDb();
+  const { username } = await params;
   
-  const user = db.prepare('SELECT id, username, bio, created_at FROM users WHERE username = ?').get(params.username) as any;
+  const user = db.prepare('SELECT id, username, bio, created_at FROM users WHERE username = ?').get(username) as any;
   if (!user) {
     notFound();
   }
@@ -26,14 +27,14 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   // Get user's approved videos and posts
   const videos = db.prepare(`
-    SELECT v.id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
+    SELECT v.id, v.user_id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
     FROM videos v
     JOIN users u ON v.user_id = u.id
     WHERE v.user_id = ? AND v.status = 'approved'
   `).all(user.id);
 
   const posts = db.prepare(`
-    SELECT p.id, p.content as description, null as media, p.created_at, u.username, 'post' as type
+    SELECT p.id, p.user_id, p.content as description, null as media, p.created_at, u.username, 'post' as type
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE p.user_id = ?

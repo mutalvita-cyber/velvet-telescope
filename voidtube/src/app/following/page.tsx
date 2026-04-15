@@ -13,7 +13,7 @@ export default async function FollowingPage() {
 
   // Fetch approved videos from following
   const videos = db.prepare(`
-    SELECT v.id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
+    SELECT v.id, v.user_id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
     FROM videos v
     JOIN users u ON v.user_id = u.id
     JOIN follows f ON f.following_id = u.id
@@ -22,7 +22,7 @@ export default async function FollowingPage() {
 
   // Fetch posts from following
   const posts = db.prepare(`
-    SELECT p.id, p.content as description, null as media, p.created_at, u.username, 'post' as type
+    SELECT p.id, p.user_id, p.content as description, null as media, p.created_at, u.username, 'post' as type
     FROM posts p
     JOIN users u ON p.user_id = u.id
     JOIN follows f ON f.following_id = u.id

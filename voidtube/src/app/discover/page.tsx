@@ -8,7 +8,7 @@ export default async function DiscoverPage() {
 
   // Fetch approved videos, ordered by views or random. For now, random.
   const videos = db.prepare(`
-    SELECT v.id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
+    SELECT v.id, v.user_id, v.title, v.description, v.file_path as media, v.created_at, u.username, 'video' as type
     FROM videos v
     JOIN users u ON v.user_id = u.id
     WHERE v.status = 'approved'

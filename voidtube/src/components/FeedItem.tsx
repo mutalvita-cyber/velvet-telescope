@@ -2,12 +2,16 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CommentSection from './CommentSection';
 
 export default function FeedItem({ item, currentUser }: { item: any, currentUser: any }) {
   const isVideo = item.type === 'video';
   const [liked, setLiked] = useState(false); // Simplified; usually fetch initial state
   const [showComments, setShowComments] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
+  const canDelete = !!currentUser && (currentUser.id === item.user_id || currentUser.isAdmin);
 
   const handleLike = async () => {
     if (!currentUser) return;
@@ -19,6 +23,30 @@ export default function FeedItem({ item, currentUser }: { item: any, currentUser
     if (res.ok) {
       const data = await res.json();
       setLiked(data.liked);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!canDelete || isDeleting) return;
+    const confirmed = window.confirm('Delete this content? This cannot be undone.');
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/content/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: item.id, targetType: item.type }),
+      });
+
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Delete failed');
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -73,6 +101,21 @@ export default function FeedItem({ item, currentUser }: { item: any, currentUser
            onMouseOut={(e) => !showComments && (e.currentTarget.style.color = 'var(--text-muted)')}>
           <span style={{ fontSize: '18px' }}>💬</span> Comment
         </button>
+        {canDelete && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              color: 'var(--danger)',
+              opacity: isDeleting ? 0.6 : 1,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        )}
       </div>
 
       {showComments && (
